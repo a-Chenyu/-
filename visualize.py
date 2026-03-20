@@ -1,26 +1,21 @@
 import matplotlib.pyplot as plt
-from gensim.models import Word2Vec
 from sklearn.decomposition import PCA
-
-# 加载模型
-model = Word2Vec.load("model/word2vec.model")
-
-# 取前10个词
-words = list(model.wv.index_to_key)[:10]
-vectors = [model.wv[word] for word in words]
-
-# PCA降维
-pca = PCA(n_components=2)
-result = pca.fit_transform(vectors)
-
-# 画图
-plt.figure(figsize=(8, 6))
-for i, word in enumerate(words):
-    x, y = result[i]
-    plt.scatter(x, y)
-    plt.text(x+0.01, y+0.01, word)
-
-plt.title("Word2Vec词向量可视化")
-plt.xlabel("X")
-plt.ylabel("Y")
-plt.show()
+from gensim.models import Word2Vec
+def visualize_words(model_path, words):    
+"""可视化指定词的词向量分布"""
+    model = Word2Vec.load(model_path)
+    word_vectors = [model.wv[word] for word in words if word in model.wv]
+    valid_words = [word for word in words if word in model.wv]
+    # PCA降维到2D
+    pca = PCA(n_components=2)
+    vectors_2d = pca.fit_transform(word_vectors)
+    # 绘图
+    plt.figure(figsize=(10, 8))    
+for i, word in enumerate(valid_words):
+        plt.scatter(vectors_2d[i, 0], vectors_2d[i, 1])
+        plt.text(vectors_2d[i, 0]+0.01, vectors_2d[i, 1]+0.01, word, fontsize=12)
+    plt.title("Word2Vec词向量分布可视化")
+    plt.xlabel("PCA Component 1")
+    plt.ylabel("PCA Component 2")
+    plt.grid(True)
+    plt.show()
