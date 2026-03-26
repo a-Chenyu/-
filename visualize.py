@@ -1,21 +1,36 @@
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from gensim.models import Word2Vec
-def visualize_words(model_path, words):    
-"""可视化指定词的词向量分布"""
-    model = Word2Vec.load(model_path)
-    word_vectors = [model.wv[word] for word in words if word in model.wv]
-    valid_words = [word for word in words if word in model.wv]
-    # PCA降维到2D
+
+    
+    print(f"展示的词：{words}")
+    
+    # 获取向量
+    vectors = np.array([model.wv[word] for word in words])
+    
+    # PCA降维
     pca = PCA(n_components=2)
-    vectors_2d = pca.fit_transform(word_vectors)
+    vectors_2d = pca.fit_transform(vectors)
+    
     # 绘图
-    plt.figure(figsize=(10, 8))    
-for i, word in enumerate(valid_words):
-        plt.scatter(vectors_2d[i, 0], vectors_2d[i, 1])
-        plt.text(vectors_2d[i, 0]+0.01, vectors_2d[i, 1]+0.01, word, fontsize=12)
-    plt.title("Word2Vec词向量分布可视化")
-    plt.xlabel("PCA Component 1")
-    plt.ylabel("PCA Component 2")
-    plt.grid(True)
+    plt.figure(figsize=(12, 10))
+    plt.scatter(vectors_2d[:, 0], vectors_2d[:, 1], s=100, c='lightblue', edgecolors='black', alpha=0.7)
+    
+    for i, word in enumerate(words):
+        plt.annotate(word, 
+                    xy=(vectors_2d[i, 0], vectors_2d[i, 1]),
+                    xytext=(5, 5),
+                    textcoords='offset points',
+                    fontsize=12,
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3))
+    
+    plt.title('Word2Vec词向量分布', fontsize=16, fontweight='bold')
+    plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.2%})')
+    plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.2%})')
+    plt.grid(True, alpha=0.3)
+    
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
+    
+    print(f"可视化图片已保存：{save_path}")
+
+
+if __name__ == "__main__":
+    visualize_model()
