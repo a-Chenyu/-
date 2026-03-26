@@ -1,54 +1,53 @@
-import numpy as np
-import matplotlib.pyplot as plt
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+独立的训练脚本
+"""
+
+import os
+import jieba
 from gensim.models import Word2Vec
-from sklearn.manifold import TSNE
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
 
-# ---------------------- 1. 准备训练数据 ----------------------
-# 示例语料（可替换为真实文本，每行一个句子，分词后列表）
-corpus = [
-    ["apple", "banana", "fruit", "red", "sweet"],
-    ["cat", "dog", "animal", "pet", "play"],
-    ["python", "java", "language", "code", "program"],
-    ["apple", "fruit", "tree", "leaf", "green"],
-    ["cat", "meow", "animal", "soft", "cute"],
-    ["python", "data", "analysis", "numpy", "pandas"],
-]
 
-# ---------------------- 2. 训练Word2Vec模型 ----------------------
-# sg=1 表示使用Skip-gram算法，vector_size=5 词向量维度
-model = Word2Vec(
-    sentences=corpus,
-    vector_size=5,
-    window=2,
-    min_count=1,
-    sg=1,
-    epochs=100
-)
+def train_from_file(file_path, vector_size=100, window=5, min_count=1, save_path='word2vec_model.model'):
+    """从文件训练Word2Vec模型"""
+    
+    # 读取文件
+    if not os.path.exists(file_path):
+        print(f"文件不存在：{file_path}")
+        return None
+    
+    with open(file_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+    
+    # 分词
+    words = jieba.lcut(text)
+    words = [w.strip() for w in words if w.strip() and w.strip() not in [' ', '\n', '\t']]
+    
+    # 构建句子（简单处理）
+    sentences = [words]
+    
+    # 训练模型
+    model = Word2Vec(
+        sentences=sentences,
+        vector_size=vector_size,
+        window=window,
+        min_count=min_count,
+        sg=1,
+        workers=4,
+        epochs=100
+    )
+    
+    # 保存模型
+    model.save(save_path)
+    print(f"模型已保存到：{save_path}")
+    
+    return model
 
-# 保存模型
-model.save("word2vec_model.model")
 
-# ---------------------- 3. 提取词向量并可视化 ----------------------
-# 选取10个目标词
-target_words = ["apple", "banana", "cat", "dog", "python", "java", "fruit", "animal", "code", "tree"]
-# 提取词向量
-word_vectors = np.array([model.wv[word] for word in target_words])
-
-# 降维（5维 -> 2维，便于可视化）
-tsne = TSNE(n_components=2, random_state=42, perplexity=3)
-word_vectors_2d = tsne.fit_transform(word_vectors)
-
-# 绘图
-plt.figure(figsize=(8, 6))
-plt.scatter(word_vectors_2d[:, 0], word_vectors_2d[:, 1], c="blue", edgecolors="black")
-
-# 标注每个词
-for i, word in enumerate(target_words):
-    plt.annotate(word, xy=(word_vectors_2d[i, 0], word_vectors_2d[i, 1]))
-
-plt.title("Word2Vec 词向量可视化（t-SNE降维）")
-plt.savefig("word_vectors_visualization.png")
-plt.show()
+if __name__ == "__main__":
+    # 使用示例
+    model = train_from_file('data/text.txt')
+    
+    if model:
+        print(f"词汇表：{list(model.wv.key_to_index.keys())}")
